@@ -1,0 +1,6 @@
+sqlmodel
+fastapi[standard]
+pytest
+httpx
+pyjwt
+bcrypt
