@@ -41,7 +41,7 @@ async def create_user(*,new_user: CreateUser, s: Session = Depends(get_session))
     except IntegrityError:
         raise HTTPException(status_code=400, detail="User already exists")
 
-@app.get("/user", response_model=List[SafeUser], tags=['Auth'])
+@app.get("/user", response_model=List[SafeUser], tags=['User'])
 async def read_users(*,s: Session = Depends(get_session)):
     try:
         return s.exec(select(User)).all()
