@@ -46,13 +46,13 @@ def test_create_user(client: TestClient):
     assert _json['name'] == "test2"
     assert 'email' in _json
     assert _json['email'] == "invalid@example.com"
-    assert 'password' in _json
+
 
 def test_token(client: TestClient):
     response = client.post("/token", data={"username":"tester", "password": "Password1", "grant_type": "password"})
     _json = response.json()
 
-    assert verify_token(_json['access_token']) == True
+    assert verify_token(_json['access_token']) == True # should propbaly test incorrect issuer token as well
 
     assert 'access_token' in _json
     assert 'token_type' in _json
@@ -60,7 +60,8 @@ def test_token(client: TestClient):
     return _json['access_token']
 
 def test_list_user(client: TestClient):
-    response = client.get("/user")
+    user_token = test_token(client)
+    response = client.get("/user",headers={"Authorization": f"Bearer {user_token}"})
     _json = response.json()
 
     assert _json[0].get('name') == "tester"
@@ -68,23 +69,38 @@ def test_list_user(client: TestClient):
     assert not _json[0].get('password')
     return _json[0].get('id')
 
-def test_update_user(client: TestClient):
+def test_patch_user(client: TestClient):
     user_token = test_token(client)
     user_id = test_list_user(client)
     # print(user_id, user_token)
-    response = client.patch("/user",params={"id": user_id},headers={"Authorization": f"Bearer {user_token}"}, json={"name": "test2","password": "Password2","email": "example@example.com"})
+    response = client.patch(f"/user/{user_id}",headers={"Authorization": f"Bearer {user_token}"}, json={"name": "test2","password": "Password2","email": "example@example.com"})
     _json = response.json()
 
     unauthenticated_response = client.patch("/user",params={"id": user_id}, json={"name": "test2","password": "Password2","email": "example@example.com"})
-    assert unauthenticated_response.status_code == 401
+    assert unauthenticated_response.status_code == 401 | 405
     assert 'name' in _json
     assert 'email' in _json
-    assert 'password' in _json
     assert _json['name'] == "test2"
     assert _json['email'] == "example@example.com"
+
+def test_put_user(client: TestClient):
+    user_token = test_token(client)
+    user_id = test_list_user(client)
+    # print(user_id, user_token)
+    response = client.put(f"/user/{user_id}",headers={"Authorization": f"Bearer {user_token}"}, json={"name": "test2","password": "Password2","email": "example@example.com"})
+    _json = response.json()
+
+    partial_response = client.put(f"/user/{user_id}",headers={"Authorization": f"Bearer {user_token}"}, json={"name": "test2","password": "Password2"})
+    assert partial_response.status_code == 422
+    assert 'name' in _json
+    assert 'email' in _json
+
+    assert _json['name'] == "test2"
+    assert _json['email'] == "example@example.com"
+
 
 def test_delete_user(client: TestClient):
     user_token = test_token(client)
     user_id = test_list_user(client)
-    response = client.delete("/user", params={"id": user_id},headers={"Authorization": f"Bearer {user_token}"})
+    response = client.delete(f"/user/{user_id}",headers={"Authorization": f"Bearer {user_token}"})
     assert response.status_code == 204

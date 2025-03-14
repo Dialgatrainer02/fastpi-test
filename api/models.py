@@ -13,9 +13,9 @@ class TokenData(SQLModel):
     username: str | None = None
 
 
-class User(SQLModel, table=True):
+class User(SQLModel, table=True): # can use inheritance here
     id: UUID4 = Field(default_factory=uuid.uuid4, primary_key=True)
-    name: str
+    name: str = Field(index=True)
     email: EmailStr
     password: str
     # scope: List[str] | None = Field(sa_type=JSON)
@@ -42,3 +42,4 @@ class SafeUser(SQLModel):
         return str(value) 
 
 
+# todo add linked table for some kind of resource 
