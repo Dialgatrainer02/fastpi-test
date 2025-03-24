@@ -67,9 +67,28 @@ def verify_token(token: Annotated[str, Depends(oauth2_scheme)]) -> bool:
             if issuer != "test-api":
                 raise credentials_exception
             token_data = TokenData(username=username)
-        except InvalidTokenError:
+        except jwt.InvalidTokenError:
             raise credentials_exception
         return True
+
+def verify_user(token: Annotated[str, Depends(oauth2_scheme)],user_id) -> bool:
+        try:
+            payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+            username = payload.get("sub")
+            issuer = payload.get('iss')
+            if username is None:
+                raise credentials_exception
+            if issuer is None:
+                raise credentials_exception
+            if issuer != "test-api":
+                raise credentials_exception
+            token_data = TokenData(username=username)
+            user_token = get_user(token_data.username)
+            
+        except jwt.InvalidTokenError:
+            raise credentials_exception
+        return True
+
 
 def get_user(s: Session, username: str) -> User:
     return s.exec(select(User).where(User.name == username)).first()

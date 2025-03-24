@@ -43,7 +43,7 @@ async def create_user(*, new_user: CreateUser, s: Session = Depends(get_session)
         raise HTTPException(status_code=400, detail="User already exists")
 
 
-@app.get("/user", response_model=List[SafeUser], tags=['User'])
+@app.get("/user", response_model=List[SafeUser], tags=['User'], description="list all users")
 async def read_users(*, s: Session = Depends(get_session), token: Annotated[str, Depends(verify_token)]):
     try:
         return s.exec(select(User)).all()
@@ -100,3 +100,80 @@ async def delete_user(*, id: UUID4, s: Session = Depends(get_session), token: An
         return
     except IntegrityError:
         raise HTTPException(status_code=400, detail="User doesn't exists")
+
+@app.post("/Booking/{user_id}", response_model=SafeBooking, tags=["Booking"])
+async def create_Booking(*, new_Booking: CreateBooking, s: Session = Depends(get_session),token: Annotated[str, Depends(verify_user)]):
+    try:
+        # logger.critical(token)
+        u = Booking(
+            user_id = new_Booking.user_id,
+            location = new_Booking.location,
+            time = new_Booking.time
+
+        )
+        s.add(u)
+        s.commit()
+        s.refresh(u)
+        return u
+    except IntegrityError:
+        raise HTTPException(status_code=400, detail="Booking already exists")
+
+
+# @app.get("/Booking", response_model=List[SafeBooking], tags=['Booking'])
+# async def read_Bookings(*, s: Session = Depends(get_session), token: Annotated[str, Depends(verify_token)]):
+#     try:
+#         return s.exec(select(Booking)).all()
+#     except:
+#         raise HTTPException(status_code=400, detail="Couldn't get Bookings")
+
+
+# @app.patch("/Booking/{id}", response_model=SafeBooking, tags=["Booking"])
+# async def update_Booking(*, id: UUID4, update_Booking: UpdateBooking, s: Session = Depends(get_session), token: Annotated[str, Depends(verify_token)]):
+#     try:
+#         u = s.get(Booking, id)
+#         if update_Booking.name:
+#             u.name = update_Booking.name
+#         if update_Booking.password:
+#             u.password = hash_password(update_Booking.password)
+#         if update_Booking.email:
+#             u.email = update_Booking.email
+
+#         s.add(u)
+#         s.commit()
+#         s.refresh(u)
+#         return u
+#     except IntegrityError:
+#         raise HTTPException(status_code=400, detail="Booking already exists")
+
+
+# @app.put("/Booking/{id}", response_model=SafeBooking, tags=["Booking"])
+# async def update_Booking(*, id: UUID4, create_Booking: CreateBooking, s: Session = Depends(get_session), token: Annotated[str, Depends(verify_token)]):
+#     try:
+#         if None in (create_Booking.name, create_Booking.password, create_Booking.email):
+#             raise HTTPException(
+#                 status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+#                 detail="Incomplete request"
+#             )
+#         u = s.get(Booking, id)
+#         u.name = create_Booking.name
+#         u.password = hash_password(create_Booking.password)
+#         u.email = create_Booking.email
+
+#         s.add(u)
+#         s.commit()
+#         s.refresh(u)
+#         return u
+#     except IntegrityError:
+#         raise HTTPException(status_code=400, detail="Booking already exists")
+
+
+# @app.delete("/Booking/{id}", status_code=status.HTTP_204_NO_CONTENT, tags=["Booking"])
+# async def delete_Booking(*, id: UUID4, s: Session = Depends(get_session), token: Annotated[str, Depends(verify_token)]):
+#     try:
+#         u = s.get(Booking, id)
+#         s.delete(u)
+#         s.commit()
+#         return
+#     except IntegrityError:
+#         raise HTTPException(status_code=400, detail="Booking doesn't exists")
+
