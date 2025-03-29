@@ -22,7 +22,7 @@ async def generate_token(form_data: Annotated[OAuth2PasswordRequestFormStrict, D
             headers={"WWW-Authenticate": "Bearer"},
         )
     token = create_token(
-        data={"sub": user.name}, expires_delta=access_token_expires
+        data={"sub": user.name,"scopes": form_data.scopes}, expires_delta=access_token_expires
     )
     return Token(access_token=token, token_type="bearer")
 
@@ -102,11 +102,11 @@ async def delete_user(*, id: UUID4, s: Session = Depends(get_session), token: An
         raise HTTPException(status_code=400, detail="User doesn't exists")
 
 @app.post("/Booking/{user_id}", response_model=SafeBooking, tags=["Booking"])
-async def create_Booking(*, new_Booking: CreateBooking, s: Session = Depends(get_session),token: Annotated[str, Depends(verify_user)]):
+async def create_Booking(*, new_Booking: CreateBooking, s: Session = Depends(get_session),token: Annotated[str, Depends(verify_token)]):
     try:
         # logger.critical(token)
         u = Booking(
-            user_id = new_Booking.user_id,
+            user_id = user_id,
             location = new_Booking.location,
             time = new_Booking.time
 

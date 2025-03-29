@@ -11,6 +11,7 @@ class Token(SQLModel):
 
 class TokenData(SQLModel):
     username: str | None = None
+    scopes: list[str] = []
 
 
 class User(SQLModel, table=True): # can use inheritance here
