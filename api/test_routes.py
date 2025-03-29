@@ -44,7 +44,7 @@ def client_fixture(session: Session):
 
 @pytest.fixture(name="token")
 def token_fixture(session: Session, user: User) -> Token:
-    token = create_token({ "sub": f"{user.name}"}, timedelta(minutes=5))
+    token = create_token({ "sub": f"{str(user.id)}", "scopes": "user"}, timedelta(minutes=5))
     return Token(access_token=token, token_type="Bearer")
 
 
@@ -58,13 +58,13 @@ def test_create_user(client: TestClient):
     assert _json['email'] == "invalid@example.com"
 
 
-def test_token(client: TestClient, user: User):
+def test_token(client: TestClient, user: User, session: Session):
     response = client.post("/token", data={"username": f"{user.name}", "password": "Password1", "grant_type": "password"})
-    scope_response = client.post("/token", data={"username": f"{user.name}", "password": "Password1","scope": "user", "grant_type": "password"})
+    scope_response = client.post("/token", data={"username": f"{user.name}", "password": "Password1", "scope": "user", "grant_type": "password"})
     _json = scope_response.json()
     
 
-    assert verify_token(_json['access_token'],security_scopes=SecurityScopes()) == True # should propbaly test incorrect issuer token as well
+    assert verify_token(_json['access_token'],SecurityScopes(), session) == True # should propbaly test incorrect issuer token as well
 
     assert 'access_token' in _json
     assert 'token_type' in _json
@@ -77,7 +77,7 @@ def test_list_user(client: TestClient, token: Token):
     assert _json[0].get('name') == "tester"
     assert _json[0].get('email') == "invalid@example.com"
     assert not _json[0].get('password')
-    return _json[0].get('id')
+
 
 def test_patch_user(client: TestClient, user: User, token: Token):
     # print(user_id, user_token)
@@ -91,14 +91,11 @@ def test_patch_user(client: TestClient, user: User, token: Token):
     assert _json['name'] == "test2"
     assert _json['email'] == "example@example.com"
 
-def test_put_user(client: TestClient):
-    user_token = test_token(client)
-    user_id = test_list_user(client)
-    # print(user_id, user_token)
-    response = client.put(f"/user/{user_id}",headers={"Authorization": f"Bearer {user_token}"}, json={"name": "test2","password": "Password2","email": "example@example.com"})
+def test_put_user(client: TestClient, user: User, token: Token):
+    response = client.put(f"/user/{user.id}",headers={"Authorization": f"Bearer {token.access_token}"}, json={"name": "test2","password": "Password2","email": "example@example.com"})
     _json = response.json()
 
-    partial_response = client.put(f"/user/{user_id}",headers={"Authorization": f"Bearer {user_token}"}, json={"name": "test2","password": "Password2"})
+    partial_response = client.put(f"/user/{user.id}",headers={"Authorization": f"Bearer {token.access_token}"}, json={"name": "test2","password": "Password2"})
     assert partial_response.status_code == 422
     assert 'name' in _json
     assert 'email' in _json
@@ -107,10 +104,8 @@ def test_put_user(client: TestClient):
     assert _json['email'] == "example@example.com"
 
 
-def test_delete_user(client: TestClient):
-    user_token = test_token(client)
-    user_id = test_list_user(client)
-    response = client.delete(f"/user/{user_id}",headers={"Authorization": f"Bearer {user_token}"})
+def test_delete_user(client: TestClient,user: User, token: Token):
+    response = client.delete(f"/user/{user.id}",headers={"Authorization": f"Bearer {token.access_token}"})
     assert response.status_code == 204
 
 

@@ -54,7 +54,7 @@ def create_token(data: dict, expires_delta: timedelta | None = None) -> str:
     return encoded_jwt
 
 
-def verify_token(token: Annotated[str, Depends(oauth2_scheme)], security_scopes: SecurityScopes,) -> bool:
+def verify_token(token: Annotated[str, Depends(oauth2_scheme)], security_scopes: SecurityScopes,session: Session = Depends(get_session)) -> bool:
     if security_scopes.scopes:
         authenticate_value = f'Bearer scope="{security_scopes.scope_str}"'
     else:
@@ -66,16 +66,19 @@ def verify_token(token: Annotated[str, Depends(oauth2_scheme)], security_scopes:
     )
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        username = payload.get("sub")
+        user_id = uuid.UUID(payload.get("sub"))
         issuer = payload.get('iss')
-        scopes = payload.get('scopes', [])
-        if username is None:
+        scopes = str(payload.get('scopes')) # have to type cast to string otherwise validation errors
+        if user_id is None:
             raise credentials_exception
         if issuer is None:
             raise credentials_exception
         if issuer != "test-api":
             raise credentials_exception
-        token_data = TokenData(username=username,scope=scopes)
+        token_data = TokenData(user_id=user_id,scopes=[scopes])
+        user = session.get(User, user_id)
+        if user is None:
+            raise credentials_exception
         for scope in security_scopes.scopes:
             if scope not in token_data.scopes:
                 raise HTTPException(

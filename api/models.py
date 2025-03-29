@@ -10,7 +10,7 @@ class Token(SQLModel):
     token_type: str
 
 class TokenData(SQLModel):
-    username: str | None = None
+    user_id: UUID4 | None = None
     scopes: list[str] = []
 
 

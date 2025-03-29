@@ -3,7 +3,7 @@ from datetime import timedelta
 from .models import *
 from .utils import *
 from typing import Annotated
-from fastapi import Depends, HTTPException, status
+from fastapi import Depends, HTTPException, status, Security
 from sqlalchemy.exc import IntegrityError
 from fastapi.security import OAuth2PasswordRequestFormStrict
 
@@ -22,7 +22,7 @@ async def generate_token(form_data: Annotated[OAuth2PasswordRequestFormStrict, D
             headers={"WWW-Authenticate": "Bearer"},
         )
     token = create_token(
-        data={"sub": user.name,"scopes": form_data.scopes}, expires_delta=access_token_expires
+        data={"sub": str(user.id),"scopes": form_data.scopes}, expires_delta=access_token_expires
     )
     return Token(access_token=token, token_type="bearer")
 
@@ -52,7 +52,7 @@ async def read_users(*, s: Session = Depends(get_session), token: Annotated[str,
 
 
 @app.patch("/user/{id}", response_model=SafeUser, tags=["User"])
-async def update_user(*, id: UUID4, update_user: UpdateUser, s: Session = Depends(get_session), token: Annotated[str, Depends(verify_token)]):
+async def update_user(*, id: UUID4, update_user: UpdateUser, s: Session = Depends(get_session), token: Annotated[str, Security(verify_token, scopes=["user"])]):
     try:
         u = s.get(User, id)
         if update_user.name:
@@ -71,7 +71,7 @@ async def update_user(*, id: UUID4, update_user: UpdateUser, s: Session = Depend
 
 
 @app.put("/user/{id}", response_model=SafeUser, tags=["User"])
-async def update_user(*, id: UUID4, create_user: CreateUser, s: Session = Depends(get_session), token: Annotated[str, Depends(verify_token)]):
+async def update_user(*, id: UUID4, create_user: CreateUser, s: Session = Depends(get_session), token: Annotated[str, Security(verify_token, scopes=["user"])]):
     try:
         if None in (create_user.name, create_user.password, create_user.email):
             raise HTTPException(
