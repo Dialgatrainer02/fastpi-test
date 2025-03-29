@@ -27,7 +27,7 @@ def user_fixture(session: Session) -> User:
     session.add(u)
     session.commit()
     session.refresh(u)
-    print(u)
+    # print(u)
     return u
 
 
@@ -112,3 +112,14 @@ def test_delete_user(client: TestClient):
     user_id = test_list_user(client)
     response = client.delete(f"/user/{user_id}",headers={"Authorization": f"Bearer {user_token}"})
     assert response.status_code == 204
+
+
+def test_create_booking(client: TestClient, user: User, token: Token):
+    response =  client.post(f"/booking/{user.id}",headers={"Authorization": f"Bearer {token.access_token}"} ,json={"location": "right here", "time": "right now"})
+    _json = response.json()
+    assert response.status_code == 200
+    print(_json)
+    assert 'location' in _json
+    assert _json['location'] == "right here"
+    assert 'time' in _json
+    assert _json['time'] == "right now"

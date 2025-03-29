@@ -101,8 +101,8 @@ async def delete_user(*, id: UUID4, s: Session = Depends(get_session), token: An
     except IntegrityError:
         raise HTTPException(status_code=400, detail="User doesn't exists")
 
-@app.post("/Booking/{user_id}", response_model=SafeBooking, tags=["Booking"])
-async def create_Booking(*, new_Booking: CreateBooking, s: Session = Depends(get_session),token: Annotated[str, Depends(verify_token)]):
+@app.post("/booking/{user_id}", response_model=SafeBooking, tags=["Booking"])
+async def create_Booking(*, user_id: UUID4, new_Booking: CreateBooking, s: Session = Depends(get_session),token: Annotated[str, Depends(verify_token)]):
     try:
         # logger.critical(token)
         u = Booking(
