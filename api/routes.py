@@ -51,10 +51,10 @@ async def read_users(*, s: Session = Depends(get_session), token: Annotated[str,
         raise HTTPException(status_code=400, detail="Couldn't get users")
 
 
-@app.patch("/user/{id}", response_model=SafeUser, tags=["User"])
-async def update_user(*, id: UUID4, update_user: UpdateUser, s: Session = Depends(get_session), token: Annotated[str, Security(verify_token, scopes=["user"])]):
+@app.patch("/user", response_model=SafeUser, tags=["User"])
+async def update_user(*, update_user: UpdateUser, s: Session = Depends(get_session), user: Annotated[str, Security(verify_token, scopes=["user"])]):
     try:
-        u = s.get(User, id)
+        u = s.get(User, user.id)
         if update_user.name:
             u.name = update_user.name
         if update_user.password:
@@ -70,15 +70,15 @@ async def update_user(*, id: UUID4, update_user: UpdateUser, s: Session = Depend
         raise HTTPException(status_code=400, detail="User already exists")
 
 
-@app.put("/user/{id}", response_model=SafeUser, tags=["User"])
-async def update_user(*, id: UUID4, create_user: CreateUser, s: Session = Depends(get_session), token: Annotated[str, Security(verify_token, scopes=["user"])]):
+@app.put("/user", response_model=SafeUser, tags=["User"])
+async def update_user(*, create_user: CreateUser, s: Session = Depends(get_session), user: Annotated[User, Security(verify_token, scopes=["user"])]):
     try:
         if None in (create_user.name, create_user.password, create_user.email):
             raise HTTPException(
                 status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
                 detail="Incomplete request"
             )
-        u = s.get(User, id)
+        u = s.get(User, user.id)
         u.name = create_user.name
         u.password = hash_password(create_user.password)
         u.email = create_user.email
@@ -91,30 +91,31 @@ async def update_user(*, id: UUID4, create_user: CreateUser, s: Session = Depend
         raise HTTPException(status_code=400, detail="User already exists")
 
 
-@app.delete("/user/{id}", status_code=status.HTTP_204_NO_CONTENT, tags=["User"])
-async def delete_user(*, id: UUID4, s: Session = Depends(get_session), token: Annotated[str, Depends(verify_token)]):
+@app.delete("/user", status_code=status.HTTP_204_NO_CONTENT, tags=["User"])
+async def delete_user(*, s: Session = Depends(get_session), user: Annotated[User, Depends(verify_token)]):
     try:
-        u = s.get(User, id)
+        u = s.get(User, user.id)
         s.delete(u)
         s.commit()
         return
     except IntegrityError:
         raise HTTPException(status_code=400, detail="User doesn't exists")
 
-@app.post("/booking/{user_id}", response_model=SafeBooking, tags=["Booking"])
-async def create_Booking(*, user_id: UUID4, new_Booking: CreateBooking, s: Session = Depends(get_session),token: Annotated[str, Depends(verify_token)]):
+@app.post("/booking", response_model=SafeBooking, tags=["Booking"])
+async def create_Booking(*, new_Booking: CreateBooking, s: Session = Depends(get_session),user: Annotated[User, Depends(verify_token)]):
     try:
+        db_booking = Booking.model_validate(new_Booking, update={"user_id": user.id}) 
         # logger.critical(token)
-        u = Booking(
-            user_id = user_id,
-            location = new_Booking.location,
-            time = new_Booking.time
+        # u = Booking(
+        #     user_id = user_id,
+        #     location = new_Booking.location,
+        #     time = new_Booking.time
 
-        )
-        s.add(u)
+        # )
+        s.add(db_booking)
         s.commit()
-        s.refresh(u)
-        return u
+        s.refresh(db_booking)
+        return db_booking
     except IntegrityError:
         raise HTTPException(status_code=400, detail="Booking already exists")
 

@@ -81,21 +81,21 @@ def test_list_user(client: TestClient, token: Token):
 
 def test_patch_user(client: TestClient, user: User, token: Token):
     # print(user_id, user_token)
-    response = client.patch(f"/user/{user.id}",headers={"Authorization": f"Bearer {token.access_token}"}, json={"name": "test2","password": "Password2","email": "example@example.com"})
+    response = client.patch(f"/user",headers={"Authorization": f"Bearer {token.access_token}"}, json={"name": "test2","password": "Password2","email": "example@example.com"})
     _json = response.json()
 
-    unauthenticated_response = client.patch("/user",params={"id": user.id}, json={"name": "test2","password": "Password2","email": "example@example.com"})
-    assert unauthenticated_response.status_code == 401 | 405
+    unauthenticated_response = client.patch("/user", json={"name": "test2","password": "Password2","email": "example@example.com"})
+    assert unauthenticated_response.status_code == 401
     assert 'name' in _json
     assert 'email' in _json
     assert _json['name'] == "test2"
     assert _json['email'] == "example@example.com"
 
 def test_put_user(client: TestClient, user: User, token: Token):
-    response = client.put(f"/user/{user.id}",headers={"Authorization": f"Bearer {token.access_token}"}, json={"name": "test2","password": "Password2","email": "example@example.com"})
+    response = client.put(f"/user",headers={"Authorization": f"Bearer {token.access_token}"}, json={"name": "test2","password": "Password2","email": "example@example.com"})
     _json = response.json()
 
-    partial_response = client.put(f"/user/{user.id}",headers={"Authorization": f"Bearer {token.access_token}"}, json={"name": "test2","password": "Password2"})
+    partial_response = client.put(f"/user",headers={"Authorization": f"Bearer {token.access_token}"}, json={"name": "test2","password": "Password2"})
     assert partial_response.status_code == 422
     assert 'name' in _json
     assert 'email' in _json
@@ -105,12 +105,12 @@ def test_put_user(client: TestClient, user: User, token: Token):
 
 
 def test_delete_user(client: TestClient,user: User, token: Token):
-    response = client.delete(f"/user/{user.id}",headers={"Authorization": f"Bearer {token.access_token}"})
+    response = client.delete(f"/user",headers={"Authorization": f"Bearer {token.access_token}"})
     assert response.status_code == 204
 
 
 def test_create_booking(client: TestClient, user: User, token: Token):
-    response =  client.post(f"/booking/{user.id}",headers={"Authorization": f"Bearer {token.access_token}"} ,json={"location": "right here", "time": "right now"})
+    response =  client.post(f"/booking/",headers={"Authorization": f"Bearer {token.access_token}"} ,json={"location": "right here", "time": "right now"})
     _json = response.json()
     assert response.status_code == 200
     print(_json)

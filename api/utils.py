@@ -54,7 +54,7 @@ def create_token(data: dict, expires_delta: timedelta | None = None) -> str:
     return encoded_jwt
 
 
-def verify_token(token: Annotated[str, Depends(oauth2_scheme)], security_scopes: SecurityScopes,session: Session = Depends(get_session)) -> bool:
+def verify_token(token: Annotated[str, Depends(oauth2_scheme)], security_scopes: SecurityScopes,session: Session = Depends(get_session)) -> User:
     if security_scopes.scopes:
         authenticate_value = f'Bearer scope="{security_scopes.scope_str}"'
     else:
@@ -88,7 +88,7 @@ def verify_token(token: Annotated[str, Depends(oauth2_scheme)], security_scopes:
                 )
     except jwt.InvalidTokenError:
         raise credentials_exception
-    return True
+    return user
 
 
 
