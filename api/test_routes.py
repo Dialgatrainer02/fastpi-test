@@ -47,6 +47,7 @@ def token_fixture(session: Session, user: User) -> Token:
     token = create_token({ "sub": f"{user.name}"}, timedelta(minutes=5))
     return Token(access_token=token, token_type="Bearer")
 
+
 def test_create_user(client: TestClient):
     response =  client.post("/user", json={"name": "test2", "email": "invalid@example.com", "password": "Password123"})
     _json = response.json()
