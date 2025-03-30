@@ -76,7 +76,7 @@ def verify_token(token: Annotated[str, Depends(oauth2_scheme)], security_scopes:
         if issuer != "test-api":
             raise credentials_exception
         token_data = TokenData(user_id=user_id,scopes=[scopes])
-        user = session.get(User, user_id)
+        user: User = session.get(User, user_id)
         if user is None:
             raise credentials_exception
         for scope in security_scopes.scopes:
