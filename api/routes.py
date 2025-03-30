@@ -29,6 +29,18 @@ async def generate_token(form_data: Annotated[OAuth2PasswordRequestFormStrict, D
 
 @app.post("/user", response_model=SafeUser, tags=["User"])
 async def create_user(*, new_user: CreateUser, s: Session = Depends(get_session)):
+    """creates a new user
+
+    Args:
+        new_user (CreateUser): data for the new user
+        s (Session, optional): db session. Defaults to Depends(get_session).
+
+    Raises:
+        HTTPException: user already exists
+
+    Returns:
+        _type_: SafeUser
+    """
     try:
         u = User(
             name=new_user.name,
@@ -45,6 +57,18 @@ async def create_user(*, new_user: CreateUser, s: Session = Depends(get_session)
 
 @app.get("/user", response_model=List[SafeUser], tags=['User'], description="list all users")
 async def read_users(*, s: Session = Depends(get_session), token: Annotated[str, Depends(verify_token)]):
+    """lists all users
+
+    Args:
+        token (Annotated[str, Depends): auth token 
+        s (Session, optional): db session. Defaults to Depends(get_session).
+
+    Raises:
+        HTTPException: couldnt get users
+
+    Returns:
+        _type_: list(SafeUser)
+    """
     try:
         return s.exec(select(User)).all()
     except:
@@ -52,7 +76,7 @@ async def read_users(*, s: Session = Depends(get_session), token: Annotated[str,
 
 
 @app.patch("/user", response_model=SafeUser, tags=["User"])
-async def update_user(*, update_user: UpdateUser, s: Session = Depends(get_session), user: Annotated[str, Security(verify_token, scopes=["user"])]):
+async def update_user(*, update_user: UpdateUser, s: Session = Depends(get_session), user: Annotated[User, Security(verify_token, scopes=["user"])]):
     try:
         u = s.get(User, user.id)
         if update_user.name:
