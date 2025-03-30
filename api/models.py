@@ -51,33 +51,28 @@ class Booking(SQLModel, table=True): # can use inheritance here
     id: UUID4 = Field(default_factory=uuid.uuid4, primary_key=True)
     user_id: UUID4 = Field(foreign_key="user.id")
     # user: User = Relationship(back_populates="booking")
-    location: Location = Field(sa_column=Column(JSON))
+    location: dict = Field(sa_column=Column(JSON), default_factory=dict)
     time: str
     # scope: List[str] | None = Field(sa_type=JSON)
-
-    # hacky workaround as nested models dont work yet 
-    @field_validator("location", mode="after")
+    @field_validator("location",mode="before")
     @classmethod
-    def location_validator(cls, value: Location) -> dict:
-        return dict(value)
-
-
-
-    
+    def location_validator(cls, value: dict) -> dict:
+        if ("city", "postcode", "addres") in value.keys:
+            return dict(value)
 
 
 class CreateBooking(SQLModel):
     # user_id: UUID4
-    location: Location
+    location: dict
     time: str
 
 class UpdateBooking(SQLModel):
-    location: Optional[Location]
+    location: Optional[dict]
     time: Optional[str]
 
 class SafeBooking(SQLModel):
     id: str
-    location: Location
+    location: dict
     time: str
 
     @field_validator("id", mode="before")

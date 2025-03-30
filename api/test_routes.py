@@ -31,6 +31,24 @@ def user_fixture(session: Session) -> User:
     return u
 
 
+@pytest.fixture(name="booking")
+def booking_fixture(session: Session, user: User) -> Booking:
+    b = Booking(
+        user_id = user.id,
+        location = Location(
+            postcode="LU1 1QJ",
+            address="18 Grove Rd",
+            city="Luton"
+        ).model_dump_json(),
+        time = str(datetime.datetime.now())
+    )
+    session.add(b)
+    session.commit()
+    session.refresh(b)
+    # print(u)
+    return b
+
+
 @pytest.fixture(name="client")
 def client_fixture(session: Session):
     def get_session_override():
@@ -112,9 +130,28 @@ def test_delete_user(client: TestClient,user: User, token: Token):
 def test_create_booking(client: TestClient, user: User, token: Token):
     response =  client.post(f"/booking/",headers={"Authorization": f"Bearer {token.access_token}"} ,json={"location": {"postcode": "IP3 9AA", "city": "ipswich", "address": "342 felixstowe road"}, "time": "right now"})
     _json = response.json()
-    print(_json)
     assert response.status_code == 200
     assert 'location' in _json
     assert _json['location'] == {"postcode": "IP3 9AA", "city": "ipswich", "address": "342 felixstowe road"}
     assert 'time' in _json
     assert _json['time'] == "right now"
+
+
+def test_update_booking(client: TestClient, user: User, token: Token, booking: Booking):
+    response =  client.patch(f"/booking/{booking,id}",headers={"Authorization": f"Bearer {token.access_token}"} ,json={"location": {"postcode": "IP3 255", "city": "norwich", "address": "somewhere"}, "time": "right then"})
+    _json = response.json()
+    print(_json)
+    assert response.status_code == 200
+    assert 'location' in _json
+    assert _json['location'] == {"postcode": "IP3 255", "city": "norwich", "address": "somewhere"}
+    assert 'time' in _json
+    assert _json['time'] == "right then"
+
+
+def test_list_user(client: TestClient, token: Token):
+    response = client.get("/booking",headers={"Authorization": f"Bearer {token.access_token}"})
+    _json = response.json()
+
+    assert _json[0].get('user_id') == user.id
+    assert _json[0].get('') == "invalid@example.com"
+    assert _json[0].get('id') is not  None

@@ -144,31 +144,25 @@ async def create_Booking(*, new_Booking: CreateBooking, s: Session = Depends(get
         raise HTTPException(status_code=400, detail="Booking already exists")
 
 
-# @app.get("/Booking", response_model=List[SafeBooking], tags=['Booking'])
-# async def read_Bookings(*, s: Session = Depends(get_session), token: Annotated[str, Depends(verify_token)]):
-#     try:
-#         return s.exec(select(Booking)).all()
-#     except:
-#         raise HTTPException(status_code=400, detail="Couldn't get Bookings")
+@app.get("/booking", response_model=List[SafeBooking], tags=['Booking'])
+async def read_Bookings(*, s: Session = Depends(get_session), token: Annotated[str, Depends(verify_token)]):
+    try:
+        return s.exec(select(Booking)).all()
+    except:
+        raise HTTPException(status_code=400, detail="Couldn't get Bookings")
 
 
-# @app.patch("/Booking/{id}", response_model=SafeBooking, tags=["Booking"])
-# async def update_Booking(*, id: UUID4, update_Booking: UpdateBooking, s: Session = Depends(get_session), token: Annotated[str, Depends(verify_token)]):
-#     try:
-#         u = s.get(Booking, id)
-#         if update_Booking.name:
-#             u.name = update_Booking.name
-#         if update_Booking.password:
-#             u.password = hash_password(update_Booking.password)
-#         if update_Booking.email:
-#             u.email = update_Booking.email
-
-#         s.add(u)
-#         s.commit()
-#         s.refresh(u)
-#         return u
-#     except IntegrityError:
-#         raise HTTPException(status_code=400, detail="Booking already exists")
+@app.patch("/booking/{id}", response_model=SafeBooking, tags=["Booking"])
+async def update_Booking(*, id: UUID4, update_Booking: UpdateBooking, s: Session = Depends(get_session), token: Annotated[User, Depends(verify_token)]):
+    try:
+        b = s.get(Booking, id)
+        update_Booking.sqlmodel_update(b)
+        s.add(b)
+        s.commit()
+        s.refresh(b)
+        return b
+    except IntegrityError:
+        raise HTTPException(status_code=400, detail="Booking already exists")
 
 
 # @app.put("/Booking/{id}", response_model=SafeBooking, tags=["Booking"])
